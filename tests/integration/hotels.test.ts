@@ -2,8 +2,9 @@ import app, { init } from "@/app";
 import faker from "@faker-js/faker";
 import { TicketStatus } from "@prisma/client";
 import httpStatus from "http-status";
-import supertest, { SuperTest } from "supertest";
+import supertest from "supertest";
 import { createEnrollmentWithAddress, createTicket, createTicketType, createUser } from "../factories";
+import { createHotel } from "../factories/hotel-factory";
 import { cleanDb, generateValidToken } from "../helpers";
 
 
@@ -42,9 +43,50 @@ describe("when token is valid", () => {
 await createTicket(enrollment.id, ticket.id, TicketStatus.RESERVED)
 
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+      console.log(response.error)
       expect(response.status).toBe(httpStatus.PAYMENT_REQUIRED);
-    });})
+    });
+    it("should respond with status 402 if ticket is remote", async () => {
+      const user = await createUser()
+    const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user)
+      const ticket = await createTicketType(true)
+await createTicket(enrollment.id, ticket.id, TicketStatus.PAID)
+
+      const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+      expect(response.status).toBe(httpStatus.PAYMENT_REQUIRED);
+    });
+    it("should respond with status 402 if ticket doesn't include hotel", async () => {
+      const user = await createUser()
+    const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user)
+      const ticket = await createTicketType(true,false)
+await createTicket(enrollment.id, ticket.id, TicketStatus.PAID)
+
+      const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+      expect(response.status).toBe(httpStatus.PAYMENT_REQUIRED);
+    });
+  it("should respond with status 200 and hotel data if there is any hotel", async ()=>{
+    const user = await createUser()
+    const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user)
+      const ticket = await createTicketType(false, true)
+await createTicket(enrollment.id, ticket.id, TicketStatus.PAID)
+
+const hotel = await createHotel()
+const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`)
+expect(response.status).toBe(httpStatus.OK)
+expect(response.body).toEqual({
+  id:hotel.id,
+  name:hotel.name,
+  image: hotel.image,
+  createdAt: hotel.createdAt.toISOString(),
+  updatedAt: hotel.updatedAt.toISOString(),
 })
+  })
+  })
+})
+
 
 /* jest.setTimeout(50000) */
  
