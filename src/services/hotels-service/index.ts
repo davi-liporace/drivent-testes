@@ -9,7 +9,7 @@ import ticketService from "../tickets-service";
 
 async function getHotels(userId:number){
 
-    const ticket = await ticketService.getTicketByUserId(userId)
+    const ticket = await hotelRepository.getTicketByUser(userId)
         if(!ticket){
             throw notFoundError()
         }
