@@ -18,18 +18,27 @@ export async function getHotels(req: AuthenticatedRequest, res: Response){
         if(error.name === "PaymentRequired"){
             return res.sendStatus(httpStatus.PAYMENT_REQUIRED)
         }
+        if(error.name === "NotFoundError"){
+            return res.sendStatus(httpStatus.NOT_FOUND)
+        }
         return res.status(httpStatus.BAD_REQUEST).send(error);
       }
 }
 
 export async function getHotelsbyId(req: AuthenticatedRequest, res: Response){
     const {userId} = req
-    const {hotelId} = req.query
+    const {hotelId} = req.params
 try{
-    const getHotelbyId = await hotelsService.getHotelsById(Number(hotelId), userId)
+    const getHotelbyId = await hotelsService.getHotelsById(parseInt(hotelId), userId)
     return res.status(httpStatus.OK).send(getHotelbyId)
 }
 catch (error) {
+    if(error.name === "PaymentRequired"){
+        return res.sendStatus(httpStatus.PAYMENT_REQUIRED)
+    }
+    if(error.name === "NotFoundError"){
+        return res.sendStatus(httpStatus.NOT_FOUND)
+    }
     return res.status(httpStatus.BAD_REQUEST).send(error);
   }
 
